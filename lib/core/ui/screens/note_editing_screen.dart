@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_ai/core/models/note.dart';
+import 'package:fitness_ai/core/services/note_service.dart';
 
 class NoteEditingScreen extends StatefulWidget {
   final Note? note;
@@ -13,6 +14,7 @@ class NoteEditingScreen extends StatefulWidget {
 class _NoteEditingScreenState extends State<NoteEditingScreen> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
+  final NoteService _noteService = NoteService();
 
   @override
   void initState() {
@@ -82,16 +84,28 @@ class _NoteEditingScreenState extends State<NoteEditingScreen> {
     );
   }
 
-  void _saveNote() {
-    Navigator.pop(
-      context,
-      Note(
-        id: '', // Generate a new ID for the note
-        title: _titleController.text,
-        content: _contentController.text,
-        creationDate: DateTime.now(),
-        lastEditDate: DateTime.now(),
-      ),
+  void _saveNote() async {
+    final note = Note(
+      id: widget.note?.id ?? '',
+      title: _titleController.text,
+      content: _contentController.text,
+      creationDate: widget.note?.creationDate ?? DateTime.now(),
+      lastEditDate: DateTime.now(),
     );
+
+    Note? savedNote;
+    if (widget.note == null) {
+      savedNote = await _noteService.createNote(note);
+    } else {
+      savedNote = await _noteService.updateNote(note);
+    }
+
+    if (savedNote != null) {
+      Navigator.pop(context, savedNote);
+    } else {
+      // Handle error, maybe show a snackbar
+      print('Failed to save note');
+      Navigator.pop(context); // Pop without returning note
+    }
   }
 }

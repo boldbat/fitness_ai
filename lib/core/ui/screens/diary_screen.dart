@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitness_ai/core/models/note.dart';
 import 'package:fitness_ai/core/ui/screens/note_editing_screen.dart';
+import 'package:fitness_ai/core/services/note_service.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({Key? key}) : super(key: key);
@@ -11,36 +11,19 @@ class DiaryScreen extends StatefulWidget {
 }
 
 class _DiaryScreenState extends State<DiaryScreen> {
-  final CollectionReference notesCollection =
-      FirebaseFirestore.instance.collection('notes');
-
-  List<Note> notes = [];
+  final NoteService _noteService = NoteService();
+  late Future<List<Note>> _notesFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchNotes();
+    _notesFuture = _noteService.getNotes();
   }
 
-  Future<void> _fetchNotes() async {
-    final QuerySnapshot snapshot = await notesCollection.get();
-    final List<Note> fetchedNotes =
-        snapshot.docs.map((doc) => Note.fromFirestore(doc)).toList();
+  Future<void> _refreshNotes() async {
     setState(() {
-      notes = fetchedNotes;
+      _notesFuture = _noteService.getNotes();
     });
-  }
-
-  Future<void> _addNoteToFirestore(Note note) async {
-    await notesCollection.add(note.toFirestore());
-  }
-
-  Future<void> _updateNoteInFirestore(Note note) async {
-    await notesCollection.doc(note.id).update(note.toFirestore());
-  }
-
-  Future<void> _deleteNoteFromFirestore(Note note) async {
-    await notesCollection.doc(note.id).delete();
   }
 
   void _createNewNote() async {
@@ -50,39 +33,28 @@ class _DiaryScreenState extends State<DiaryScreen> {
         builder: (context) => const NoteEditingScreen(),
       ),
     );
-
     if (newNote != null) {
-      await _addNoteToFirestore(newNote);
-      setState(() {
-        notes.add(newNote);
-      });
+      await _noteService.createNote(newNote);
+      _refreshNotes();
     }
   }
 
   void _editNote(Note note) async {
-    final updatedNote = await Navigator.push(
+    final Note? updatedNote = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NoteEditingScreen(note: note),
       ),
-    ) as Note?;
-
+    );
     if (updatedNote != null) {
-      await _updateNoteInFirestore(updatedNote);
-      setState(() {
-        final index = notes.indexOf(note);
-        if (index != -1) {
-          notes[index] = updatedNote;
-        }
-      });
+      await _noteService.updateNote(updatedNote);
+      _refreshNotes();
     }
   }
 
   void _deleteNote(Note note) async {
-    await _deleteNoteFromFirestore(note);
-    setState(() {
-      notes.remove(note);
-    });
+    await _noteService.deleteNote(note.id);
+    _refreshNotes();
   }
 
   @override
@@ -99,20 +71,38 @@ class _DiaryScreenState extends State<DiaryScreen> {
         ],
       ),
       backgroundColor: Colors.black,
-      body: notes.isEmpty
-          ? const Center(
+      body: FutureBuilder<List<Note>>(
+        future: _notesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+                child: Text('Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.white)));
+          }
+          final notes = snapshot.data ?? [];
+          if (notes.isEmpty) {
+            return const Center(
               child: Text(
                 'No notes yet. Click + to create one.',
                 style: TextStyle(color: Colors.grey),
               ),
-            )
-          : ListView.builder(
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: _refreshNotes,
+            child: ListView.builder(
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final note = notes[index];
                 return _buildNoteCard(note);
               },
             ),
+          );
+        },
+      ),
     );
   }
 
@@ -140,7 +130,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 note.content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.white),
               ),
             ],
           ),

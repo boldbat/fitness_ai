@@ -24,15 +24,6 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
-      case TargetPlatform.windows:
-        return windows;
-      case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -65,24 +56,5 @@ class DefaultFirebaseOptions {
     projectId: 'fitness-ai-3be07',
     storageBucket: 'fitness-ai-3be07.firebasestorage.app',
     iosBundleId: 'com.example.fitnessAi',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBA-yon5Z16vbH7mA5nOvD49IXDjZ55bOY',
-    appId: '1:219551804012:ios:26f468df117c8307ebc649',
-    messagingSenderId: '219551804012',
-    projectId: 'fitness-ai-3be07',
-    storageBucket: 'fitness-ai-3be07.firebasestorage.app',
-    iosBundleId: 'com.example.fitnessAi',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBTsvfqCRjEPxzulnz3ydrlnC2dWV9g5UA',
-    appId: '1:219551804012:web:e3564d159de1614aebc649',
-    messagingSenderId: '219551804012',
-    projectId: 'fitness-ai-3be07',
-    authDomain: 'fitness-ai-3be07.firebaseapp.com',
-    storageBucket: 'fitness-ai-3be07.firebasestorage.app',
-    measurementId: 'G-RHEQVV3W96',
   );
 }

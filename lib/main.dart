@@ -13,12 +13,18 @@ import 'core/ui/screens/scan_screen.dart'; // Scan
 import 'core/ui/screens/plans_screen.dart'; // Plans
 import 'core/ui/screens/chat_coach_screen.dart'; // More
 
+import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env'); // Load environment variables
-  await Firebase.initializeApp();
+  await dotenv.load(fileName: 'assets/.env');
+  print('Dotenv loaded successfully: ${dotenv.isEveryDefined([
+        'FIREBASE_API_KEY'
+      ])}'); // Add this line for logging
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppProvider(),
@@ -58,8 +64,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.black,
           selectedItemColor: Colors.blue,
           unselectedItemColor: Colors.grey,
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal),
+          type: BottomNavigationBarType.fixed,
         ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
@@ -125,7 +130,6 @@ class MainScreenState extends State<MainScreen> {
             label: 'More',
           ),
         ],
-        currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
